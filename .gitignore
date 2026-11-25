@@ -1,0 +1,13 @@
+# Identifiants : ne jamais publier
+config.secret
+.env
+# Vos fichiers personnels (polices, textes) : seuls les README sont suivis
+custom/fonts/*
+custom/texts/*
+!custom/fonts/README.md
+!custom/texts/README.md
+# Divers
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

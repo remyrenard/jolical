@@ -1,0 +1,32 @@
+services:
+  jolical:
+    build: .
+    container_name: jolical
+    restart: unless-stopped
+    # Port 6006 ouvert seulement sur l'adresse JOLICAL_BIND (127.0.0.1 par défaut : la machine elle-même, pour un proxy inverse installé sur l'hôte).
+    # Accès direct depuis le réseau local, proxy dans un autre conteneur : voir docs/INSTALLATION.md, section 7 (JOLICAL_BIND dans .env).
+    ports: ["${JOLICAL_BIND:-127.0.0.1}:6006:8080"]
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    volumes:
+      - jolical-data:/data                # réglages, thèmes, appareils connectés, sauvegarde hors-ligne
+      - ./custom/fonts:/fonts:ro          # vos polices .woff2 / .ttf / .otf (en plus de celles fournies)
+      - ./custom/texts:/texts:ro          # vos langues (texts_XX.json) et textes modifiés (texts_FR.perso.json…)
+    secrets: [config]                     # identifiants : voir config.secret.example et docs/INSTALLATION.md
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}       # "debug" pour tout journaliser
+      TZ: ${TZ:-Europe/Paris}             # fuseau du conteneur (logs, dates) ; à régler dans .env (ex. TZ=America/Montreal)
+    # État visible dans Docker / Portainer (healthy / unhealthy) : le serveur répond et /data est accessible en écriture
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+secrets:
+  config:
+    file: ./config.secret                 # propriétaire 1000 (sudo chown 1000:1000), droits 600
+volumes:
+  jolical-data:
+    name: ${JOLICAL_VOLUME:-jolical-data}   # nom du volume Docker ; reprendre un volume existant : JOLICAL_VOLUME=son-nom dans .env

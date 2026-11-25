@@ -1,0 +1,8 @@
+config.secret
+.env
+custom/
+docs/
+.git/
+*.md
+node_modules/
+*.log

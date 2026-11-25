@@ -1,0 +1,534 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><!--TITLE--></title>
+<!-- Application installable (PWA) : manifeste, icônes, nom « Jolical » sur l'écran d'accueil ; couleur de la barre = fond de la page s'il est réglé (posée par le serveur) -->
+<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icons/icon.svg" type="image/svg+xml"><link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="theme-color" content="#32ad95">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="{{app.name}}"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+/* =====================================================================
+   1. VARIABLES
+   Chaque famille d'éléments a 7 réglages (Paramètres > Apparence) :
+     --X-fg texte · --X-bg fond · --X-bo opacité du fond · --X-bc bordure · --X-bw épaisseur · --X-br radius · --X-sh ombre
+   X = g (Général : menu latéral, cadres) · b (Boutons) · c (Calendriers : semaines, mois, mini) · p (Pop-up) · f (Champs)
+   ===================================================================== */
+:root{--tabw0:34px;--cc1:#8e44ad;--cc2:#27ae60;--cc3:#2980b9;--bg:#fff;--fg:#1c2025;--acc:#4f8cff;--fs:14px;--dn:3px;--wgap:6px;--calpad:12px;--calpadm:4px;--hr:10px;--evr:4px;--evpad:2px;--ppad:18px;--blur:4px;
+ --tt:30px;--st:12px;--today:#e74c3c;--todayfg:#fff;--mute:#9aa3ad;--mutehd:#fff;--muteop:.55;--recop:.7;--shd:#0004;--shs:12px;--ovl:#0007;--grpo:0%;--ev-sh:none;
+ --sepw:1px;--sepop:100%;--extop:30%;--vac:#f6d365;--hol:#f5a3a3;
+ /* Luminosité (évènements, pastilles) : mélange avec blanc (+) ou noir (−) · --X-lm = blanc/noir, --X-lp = pourcentage */
+ --bigr:4px;--ev-lm:white;--ev-lp:0%;--dot-lm:white;--dot-lp:0%;--dotsz:80%;--evfg:#fff;
+ /* Survol : --X-hm = couleur mélangée au survol (blanc, noir, couleur principale ou transparent = aucun), --X-hp = intensité
+    X = b Boutons · c Calendriers · e Évènements · d En-têtes des jours · t Tâches · f Champs · g Général */
+ --b-hm:black;--b-hp:10%;--c-hm:var(--acc);--c-hp:18%;--g-hm:var(--acc);--g-hp:18%;--e-hm:transparent;--e-hp:0%;--d-hm:transparent;--d-hp:0%;
+ --t-hm:transparent;--t-hp:0%;--f-hm:transparent;--f-hp:0%;
+ /* Bouton principal : facteur de taille ; --fabh = place réservée en bas des vues pour ne pas masquer la dernière ligne */
+ /* Animations : --ak = facteur de vitesse (0,42 rapide · 0,65 modérée · 1 lente) ; --akp = ouverture des pop-up, une vitesse plus lente (0,65 · 1 · 1,54) ;
+    courbes « ouverture » / « fermeture » / « apparition » / « translation » ;
+    --thc / --tl / --td / --tf / --tg = durées (couleurs au survol, soulèvement, pastilles, bouton principal, menus ; 0s = animation désactivée) ;
+    --po0 / --ps0 = opacité / échelle de départ des pop-up. Chaque durée a une valeur ici : une variable non définie rendrait invalide toute la déclaration « transition » */
+ --ak:1;--akp:calc(var(--ak)*1.54);--e-open:cubic-bezier(.19,.13,.49,1.12);--e-close:cubic-bezier(.25,-.25,.8,1);--e-pop:cubic-bezier(.18,.89,.32,1.2);--e-lift:cubic-bezier(.18,.89,.32,1);
+ --thc:0s;--tl:0s;--td:0s;--tf:0s;--tg:0s;--po0:0;--ps0:.92;--dotk:1.25;
+ --fabk:1;--fabh:calc(var(--fabk)*56px + 24px);
+ --g-bo:100%;--g-bw:1px;--g-br:10px;--g-sh:0 0 0 transparent;--b-bo:100%;--b-bw:1px;--b-br:10px;--b-sh:0 0 0 transparent;--c-bo:100%;--c-bw:1px;--c-br:10px;--c-sh:0 0 0 transparent;
+ --p-bo:100%;--p-bw:1px;--p-br:10px;--p-sh:0 0 0 transparent;--f-bo:100%;--f-bw:1px;--f-br:10px;--f-sh:0 0 0 transparent}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1f23;--fg:#e6e8eb}}
+:root{--pan:color-mix(in srgb,var(--bg) 94%,var(--fg));--line:color-mix(in srgb,var(--bg) 85%,var(--fg));--mut:color-mix(in srgb,var(--fg) 55%,var(--bg));
+ --sbg:var(--pan);--grp:var(--pan);
+ --tc:var(--fg);--sc:var(--mut);--danger:color-mix(in srgb,#e74c3c 22%,var(--bg));--donec:var(--acc)}
+/* ===== 2. BASE ===== */
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:var(--fs) var(--fx,system-ui,sans-serif);background:var(--bg);color:var(--fg);display:flex;height:100vh}
+/* Casse (Titres et textes) : titres = titre principal + titre de l'aperçu d'une journée ; sous-titres = sections du menu latéral et des Paramètres.
+   « Majuscule au premier mot » = texte tel quel + 1re lettre en majuscule (::first-letter) ; « à chaque mot » = capitalize */
+#title,#dd .dtitle{text-transform:var(--cast,none)}#title::first-letter,#dd .dtitle::first-letter{text-transform:var(--cast1,uppercase)}
+:is(h4.fold,h4.cat-h)>span{text-transform:var(--cass,uppercase)}:is(h4.fold,h4.cat-h)>span::first-letter{text-transform:var(--cass1,uppercase)}
+/* calendriers = noms des mois (vue Année, mini-calendrier) + en-têtes des jours de la vue Mois */
+.mh,.mnav span,.week .dh{text-transform:var(--casc,lowercase)}:is(.mh,.mnav span,.week .dh)::first-letter{text-transform:var(--casc1,lowercase)}
+h1,h3,.mh,#sidetitle{font-family:var(--ft,var(--fx,system-ui,sans-serif));color:var(--tc)}
+/* couleurs des titres : --tc = page (titre principal, volet, noms des mois) · --tcp = panneaux (Paramètres : Apparence, Connexions…) · --tcd = pop-up (titres, champ titre) */
+.set h3{color:var(--tcp,var(--tc))}:is(dialog h3,#t,#tk-t){color:var(--tcd,var(--tc))}
+h4.fold,h4.cat-h,.fab,.row button,#dd .plusrow button,.dh,button.sm{font-family:var(--fsb,var(--fx,system-ui,sans-serif))}
+button,input,select,textarea{font:inherit;padding:6px 10px}
+/* Boutons */
+/* Couleurs de base d'un bouton : --bb fond, --bt texte, --bl bordure (le survol les modifie, cf. section 8) */
+button{--bb:color-mix(in srgb,var(--b-bg,var(--bg)) var(--b-bo),transparent);--bt:var(--b-fg,currentColor);--bl:var(--b-bc,var(--line));
+ color:var(--bt);background:var(--bb);border:var(--b-bw) solid var(--bl);border-radius:var(--b-br);box-shadow:var(--b-sh);cursor:pointer}
+/* boutons de menus (‹ Aujourd'hui ›, onglets des vues, + Tâche) : « Couleur du texte / de fond (menus) » (--bm-fg / --bm-bg), sinon couleurs des boutons ; onglet actif : couleur principale */
+:is(#prev,#today,#next,.tab,.tkadd button):not(.on){--bb:color-mix(in srgb,var(--bm-bg,var(--b-bg,var(--bg))) var(--b-bo),transparent);--bt:var(--bm-fg,var(--b-fg,currentColor))}
+button.on,button.pri{--bb:var(--acc);--bl:var(--acc);--bt:#fff}
+button.danger{--bb:var(--danger);--bt:var(--dangerfg,var(--b-fg,currentColor));--bl:var(--dangerbc,var(--b-bc,var(--line)))}
+button:disabled{opacity:.55;cursor:default;--bb:color-mix(in srgb,var(--b-bg,var(--bg)) var(--b-bo),transparent)}button.pri:disabled{--bt:var(--b-fg,var(--fg))}   /* bouton principal grisé : texte lisible */
+button.sm{padding:3px 10px;font-size:12px}button.rnd{padding:0}
+/* Focus (clavier, ouverture d'un pop-up) : couleur principale ; boutons rouges : couleur de leur bordure (rouge par défaut) */
+*{-webkit-tap-highlight-color:transparent}   /* iPad / iPhone : pas de carré sombre au toucher */
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}button.danger:focus-visible{outline-color:var(--dangerbc,#e74c3c)}
+/* Champs */
+input:not([type=checkbox]):not([type=range]),select,textarea{--fb:color-mix(in srgb,var(--f-bg,var(--bg)) var(--f-bo),transparent);--fl:var(--f-bc,var(--line));color:var(--f-fg,inherit);background:var(--fb);border:var(--f-bw) solid var(--fl);border-radius:var(--f-br);box-shadow:var(--f-sh)}
+/* Liste ouverte d'un menu déroulant (PC) : fond normal d'un champ, même si le menu est survolé */
+select option{background:color-mix(in srgb,var(--f-bg,var(--bg)) var(--f-bo),var(--bg));color:var(--f-fg,var(--fg))}
+input[type=checkbox],input[type=range]{accent-color:var(--acc)}input[type=checkbox]{padding:0}
+.ico{width:1em;height:1em;display:block}.rnd{width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center}.rnd .ico{width:52%;height:52%}.rnd.sm{width:26px;height:26px}
+.tab .ico{width:1.2em;height:1.2em}
+/* Onglets à picto (Anniversaires, Paramètres) : ronds, de la hauteur de l'onglet « Mois » (--tabih, mesurée par tabSize() dans app.js), picto centré ;
+   gâteau remonté de 0,18 em : le bas du dessin s'aligne sur le bas des lettres de « Mois » / « Année » */
+.tabs .tab[data-ico]{width:var(--tabih,auto);height:var(--tabih,auto);padding:0;border-radius:50%;display:inline-grid;place-items:center}.tab[data-v="bday"] .ico{transform:translateY(-.18em)}
+/* ===== 3. MENU LATÉRAL (Général) ===== */
+/* Volet : replié = décalé hors de l'écran (marge négative sur ordinateur : le contenu se resserre en même temps ; translation sur mobile) */
+/* fond prolongé de 60 px à gauche (ombre pleine) : rien ne se voit derrière quand l'animation « dépasse » */
+aside{--sw:280px;--tabw:34px;--tabh:48px;--asbg:color-mix(in srgb,var(--sbg) var(--g-bo),transparent);width:var(--sw);margin-left:0;background:var(--asbg);color:var(--g-fg,var(--fg));border-right:var(--g-bw) solid var(--g-bc,var(--line));box-shadow:-60px 0 0 var(--asbg),var(--g-sh);flex:none;position:relative;z-index:2;display:flex;flex-direction:column;padding:0}
+.side-in{flex:1;min-height:0;overflow:auto;padding:0 20px 12px}   /* seul l'intérieur défile (sous le titre) : la barre de défilement commence au mini-calendrier, la languette peut dépasser du volet */
+aside>.sh{flex:none;padding:12px 20px 0}
+aside label{line-height:1.2em}body.closed aside{margin-left:calc(-1*var(--sw));visibility:hidden}
+/* Languette du volet : collée au bord droit (par-dessus la bordure), carrée à gauche, arrondie à droite, couleur du volet, 34 × 48 px, à 11 px du haut ;
+   double chevron « (volet ouvert) qui pivote en » (volet fermé, courbe propre à la fermeture) ; survol : elle s'allonge de 5 px */
+#burger{position:absolute;left:100%;top:11px;width:var(--tabw);height:var(--tabh);visibility:visible;padding:0 12px 0 0;display:flex;align-items:center;justify-content:flex-end;
+ background:var(--asbg);color:var(--g-fg,var(--fg));border:var(--g-bw) solid var(--g-bc,var(--line));border-left:0;border-radius:0 999px 999px 0;box-shadow:var(--g-sh);clip-path:inset(-40px -40px -40px 0);transition:width var(--tl,0s) var(--e-pop)}
+#burger:hover{background:var(--asbg);color:var(--g-fg,var(--fg));border-color:var(--g-bc,var(--line))}
+#burger .ico{width:22px;height:22px;flex:none;transition:transform calc(.45s*var(--ak,1)) var(--e-pop)}body.closed #burger .ico{transform:rotate(-180deg);transition:transform calc(.35s*var(--ak,1)) cubic-bezier(.19,.13,.49,1.12)}
+@media(hover:hover){#burger:hover{width:calc(var(--tabw) + 5px)}}
+body.wide header .left{margin-left:max(0px,calc(var(--tabw0) + 8px - 12px))}   /* écran large : ‹ Aujourd'hui › décalé de la largeur de la languette */
+.sh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+/* Outils : liens vers les applications Nextcloud, même style que les calendriers (.cal : fond qui réagit au survol), picto avant le texte */
+#tools a.cal{color:inherit;text-decoration:none;cursor:pointer}#tools a .ico{width:14px;height:14px;opacity:.7;flex:none}.sh b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;font-weight:600}
+h4.fold,h4.cat-h{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin:16px 0 6px;font-size:var(--st);color:var(--sc)}
+.fold span,.cat-h span{flex:1}.fold i,.cat-h i{width:12px;height:12px;transition:transform var(--tg) ease}.fold i .ico,.cat-h i .ico{width:100%;height:100%}.shut i{transform:rotate(-90deg)}
+/* Engrenage des options des tâches : pas un bouton (couleur du titre, pas de fond) ; zoom au survol (--gs), rotation quand le menu-bulle s'ouvre / se ferme (.open, --gr) */
+.fold button{--bb:transparent;--bl:transparent;--bt:currentColor;padding:0 4px;border:0;box-shadow:none}:is(#tgear,#qgear) .ico{transition:transform var(--tg) var(--e-pop);transform:scale(var(--gs,1)) rotate(var(--gr,0deg))}:is(#tgear,#qgear).open{--gr:30deg}.fold button .ico{width:20px;height:20px}
+/* Groupes (Calendriers, Tâches, catégories des paramètres) */
+.cat{border:var(--g-bw) solid var(--g-bc,var(--line));border-radius:var(--g-br);background:color-mix(in srgb,var(--grp) var(--grpo),transparent);margin:12px 0;padding:0 14px}
+.cat h4.cat-h,.cat h4.fold{margin:0;padding:12px 0}.cat-b{padding-bottom:8px}
+.tksep{margin-top:12px}.tksep:first-child{margin-top:2px}   /* tâches classées par liste : nom de la liste */
+.calsep{display:flex;align-items:center;gap:8px;margin:10px 0 4px;font-size:11px;color:var(--donec)}.calsep::after{content:'';flex:1;border-top:1px solid var(--donec)}   /* séparateur « Externes » */
+.cal,.task{display:flex;gap:8px;align-items:center;margin:calc(var(--dn)*1.7) 0}.cal{padding:2px 4px;margin-inline:-4px;border-radius:6px}.cal i{width:12px;height:12px;border-radius:50%;flex:none}
+#tasks{font-family:var(--fk,var(--fx,system-ui,sans-serif))}
+/* Tâches : --tkc couleur du texte, --tka couleur de la case (le survol les modifie) */
+.task{--tkc:var(--todoc,var(--g-fg,var(--fg)));--tka:var(--acc)}.task.done{--tkc:var(--donec);--tka:var(--donec)}
+/* clic sur le texte d'une tâche modifiable = pop-up tâche ; lecture seule (.ro) : ni clic ni survol */
+.task span{flex:1;min-width:0;overflow-wrap:anywhere;margin-left:-4px;color:var(--tkc)}.task:not(.ro) span{cursor:pointer}.tkadd{display:flex;justify-content:flex-end;margin-top:8px}.task small{color:var(--mut)}.task input{accent-color:var(--tka)}
+.task.done span{text-decoration:line-through}
+#veil{display:none}
+/* Pop-up flottants (bulles, options, sélecteur de couleur) */
+#tpop,#qpop,#bub,#cp{position:fixed;z-index:6;background:color-mix(in srgb,var(--p-bg,var(--bg)) var(--p-bo),transparent);color:var(--p-fg,var(--fg));border:var(--p-bw) solid var(--p-bc,var(--line));border-radius:var(--p-br);box-shadow:var(--p-sh)}
+#tpop,#qpop{width:240px;padding:10px}:is(#tpop,#qpop) label{display:flex;gap:8px;margin:6px 0}#qpop b{display:block;font-size:12px;margin:8px 0 2px;color:var(--mut)}#qpop b:first-child{margin-top:0}
+/* ===== 4. ZONE PRINCIPALE & EN-TÊTE =====
+   Étroit (par défaut) : ligne 1 = ☰ + titre centré · ligne 2 = navigation (gauche) + vues (droite)
+   Large (body.wide, seuil "hdBp" réglable dans Titres et textes) : ☰ + navigation | titre centré | vues, sur une ligne */
+main{flex:1;display:flex;flex-direction:column;min-width:0;padding:12px;gap:10px;overflow-x:clip}
+header{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:8px}
+header .left{display:contents}
+h1{grid-area:1/1/2/3;text-align:center;margin:0;padding:0 44px;line-height:1.15;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(var(--tt)*1.5);font-weight:600}
+.nav,.tabs{display:flex;align-items:end;gap:8px}
+.nav{grid-area:2/1;justify-self:start}.tabs{grid-area:2/2;justify-self:end}
+body.wide header{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+body.wide header .left{display:flex;align-items:end;gap:8px;grid-area:1/1;justify-self:start}
+body.wide h1{grid-area:1/2;padding:0 8px}
+body.wide .tabs{grid-area:1/3}
+.pane{flex:1;min-height:0;border:var(--g-bw) solid var(--g-bc,var(--line));border-radius:var(--g-br);background:color-mix(in srgb,var(--g-bg,var(--bg)) var(--g-bo),transparent);color:var(--g-fg,var(--fg));overflow:hidden auto;padding:var(--calpad);padding-bottom:calc(var(--calpad) + var(--fabh));box-shadow:var(--g-sh)}
+#v-settings{padding:0 0 var(--fabh)}
+/* Bouton principal : taille réglable (--fabk), ancré au coin bas-droit (il grandit vers le haut et la gauche) */
+.fab{position:fixed;right:24px;bottom:24px;z-index:3;width:calc(56px*var(--fabk));height:calc(56px*var(--fabk));padding:0;display:grid;place-items:center;border-radius:50%;box-shadow:0 calc(var(--shs)/3) var(--shs) var(--shd)}
+/* icône du bouton principal : + (évènement) ou ✕ (fermer les paramètres) */
+.fab .ico{width:42%;height:42%;transition:transform var(--tf) var(--e-pop)}.fab.x .ico{transform:rotate(-45deg)}   /* + tourné de 45° = × */
+/* Languette « Mode hors-ligne » : en bas à gauche, face au bouton principal (même hauteur), arrondie à droite seulement */
+#offb{position:fixed;left:0;bottom:24px;z-index:3;height:calc(56px*var(--fabk));display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:1px;padding:0 calc(28px*var(--fabk)) 0 16px;
+ border:0;border-radius:0 999px 999px 0;background:color-mix(in srgb,#e74c3c 75%,transparent);color:#fff;text-shadow:0 1px 2px rgb(0 0 0/.35);-webkit-backdrop-filter:blur(var(--blur));backdrop-filter:blur(var(--blur));box-shadow:0 calc(var(--shs)/3) var(--shs) var(--shd);text-align:left;line-height:1.2}
+#offb[hidden]{display:none}#offb b{font-size:14px}#offb small{font-size:11px;opacity:.9}
+#banner{background:#c0392b;color:#fff;padding:6px 12px;border-radius:var(--g-br)}
+/* ===== 5. VUE MOIS =====
+   Une semaine = grille 7 colonnes x 4 lignes (en-tête, matin, après-midi, soir). Chaque cellule (en-tête ou section)
+   est placée DIRECTEMENT dans la grille de la semaine (grid-area posé en JS) : une ligne prend toujours la hauteur
+   de la cellule la plus haute, les pointillés sont donc alignés sur les 7 jours, sans dépendre de "subgrid".
+   Classes des cellules : .first (lundi) / .last (dimanche) / .out (hors mois) / .td (aujourd'hui) ; data-d="AAAA-MM-JJ".
+   Bordure : en-tête (haut/gauche/droite) + sections (gauche/droite ; pointillés en haut ; bas plein sur le soir).
+   Coins arrondis de la semaine (radius des calendriers) : haut et bas du lundi et du dimanche. */
+#grid{display:flex;flex-direction:column;gap:var(--wgap)}
+.week{display:grid;grid-template-columns:var(--wcols,repeat(7,minmax(0,1fr)));grid-template-rows:repeat(4,auto);border-radius:var(--c-br);isolation:isolate}
+/* Ombre d'une semaine (Calendriers > Ombre) : couche placée dessous, qui reproduit la forme (7 en-têtes arrondis + corps) ;
+   le corps, peint après les en-têtes et de la couleur du panneau, cache leurs ombres vers le bas : seul le contour est ombré */
+.wsh{z-index:-1;box-shadow:var(--c-sh);pointer-events:none;cursor:default}.wsh.h{border-radius:var(--hr) var(--hr) 0 0}
+.wsh.b{border-radius:0 0 var(--c-br) var(--c-br);background:color-mix(in srgb,var(--g-bg,var(--bg)) var(--g-bo),transparent)}
+.week>*{min-width:0;cursor:pointer;container-type:inline-size;color:var(--c-fg,inherit)}.week>:not(.first):not(.wsh){border-left-width:0}   /* bordures jamais superposées (une seule entre deux jours) */
+.week>.dh:not(.first),.wsh.h:not(.h0){border-left-width:var(--c-bw);margin-left:calc(-1*var(--c-bw))}   /* en-têtes arrondis : bordure gauche conservée (sinon le coin s'amincit jusqu'à disparaître), posée sur la bordure droite du voisin */
+.week>.out{border-color:color-mix(in srgb,var(--mut) 50%,transparent)!important}   /* jours hors du mois : bordures grises, à moitié */
+.week>.out{opacity:var(--muteop)}
+.week>.sec.aft{border-left-width:var(--c-bw);margin-left:calc(-1*var(--c-bw))}   /* 1er jour du mois après un jour hors du mois : sa propre bordure gauche (couleur normale), posée sur la bordure grisée du voisin */
+.dh{padding:3px 6px;font-size:var(--st);color:#fff;text-align:center;white-space:nowrap;border:var(--c-bw) solid var(--c-bc,var(--line));border-bottom:0;border-radius:var(--hr) var(--hr) 0 0}
+/* En-têtes : police "fontHead" (sinon sous-titres), taille "sizeHead" (sinon sous-titres), réduite par fitHeads() si un texte ne tient pas (--hsfit) */
+.week .dh{background:var(--hb);font-family:var(--fh,var(--fsb,var(--fx,system-ui,sans-serif)));font-size:var(--hsfit,var(--hs,var(--st)));overflow:hidden}
+.dh.first{border-top-left-radius:var(--c-br)}.dh.last{border-top-right-radius:var(--c-br)}.dh.td{font-weight:700}
+.sec{--sb:color-mix(in srgb,var(--c-bg,transparent) var(--c-bo),transparent);--so:transparent;background-color:var(--sb);background-image:linear-gradient(var(--so),var(--so));border:var(--c-bw) solid var(--c-bc,var(--line));padding-bottom:calc(var(--dn) + 1px);
+ border-top:var(--sepw) dashed color-mix(in srgb,var(--c-bc,var(--line)) var(--sepop),transparent);border-bottom:0}   /* pointillés : sous l'en-tête et entre les sections */
+.sec.s{border-bottom:var(--c-bw) solid var(--c-bc,var(--line))}
+.sec.s.first{border-bottom-left-radius:var(--c-br)}.sec.s.last{border-bottom-right-radius:var(--c-br)}
+.sec.vac{--so:color-mix(in srgb,var(--vac) var(--extop),transparent)}.sec.hol{--so:color-mix(in srgb,var(--hol) var(--extop),transparent)}   /* couche par-dessus le fond normal */   /* priorité : aujourd'hui > férié > vacances (posée en JS) */
+.sec.cc1{--so:color-mix(in srgb,var(--cc1) var(--extop),transparent)}.sec.cc2{--so:color-mix(in srgb,var(--cc2) var(--extop),transparent)}.sec.cc3{--so:color-mix(in srgb,var(--cc3) var(--extop),transparent)}   /* couleurs personnalisées des jours (aperçu d'un jour) */
+.sec.td{--so:color-mix(in srgb,var(--today) 30%,transparent)}
+/* Évènement : --evc couleur du calendrier (posée en JS), --evb = cette couleur ajustée par « Luminosité des évènements » ;
+   texte : --evtx (couleur automatique blanc/noir, posée en JS) sinon « Couleur des noms des évènements » (--evfg) */
+.ev{--evb:color-mix(in srgb,var(--evc,transparent),var(--ev-lm) var(--ev-lp));background:var(--evb);display:flex;align-items:center;gap:6px;margin:calc(var(--dn) + 2px) 4px 0;padding:1px 6px;border-radius:var(--evr);box-shadow:var(--ev-sh);color:var(--evtx,var(--evfg));font-size:12px;cursor:pointer}.ev.rec{opacity:var(--recop)}
+.ev{line-height:1.25}.sec .ev{margin-top:calc(var(--dn) + 1px)}.sec .ev~.ev{margin-top:calc(var(--dn) + 2px)}   /* 1 px au-dessus + 1 px au-dessous (padding de .sec) : centré, place pour le soulèvement au survol */
+.ev.ph{visibility:hidden;pointer-events:none}   /* emplacement vide : garantit la hauteur minimale d'une section */
+/* Statut : provisoire = opacité « non-confirmés » (si aussi récurrent : la plus faible des deux) ; annulé = la moitié, et barré */
+.ev.tent{opacity:var(--ncop)}.ev.rec.tent{opacity:min(var(--recop),var(--ncop))}
+.ev.canc{opacity:calc(var(--ncop)/2)}.ev.rec.canc{opacity:calc(min(var(--recop),var(--ncop))/2)}.ev.canc .t{text-decoration:line-through}   /* annulé : moitié de l'opacité provisoire (et/ou récurrent) */
+/* Tags : Important = nom en gras (⚠️ ajouté en JS) · Double taille (vue Mois seulement) = double hauteur, radius propre (--bigr),
+   texte centré sur 2 lignes, sans heure, police réduite par fitBigs() si le nom ne tient pas */
+.ev.imp .t{font-weight:700}
+.sec .ev.big{min-height:calc(2*(15px + 2*var(--evpad) + 2px) + var(--dn) + 2px);justify-content:center;text-align:center;border-radius:var(--bigr)}
+.sec .ev.big .t{flex:1;padding-block:.06em .2em;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700;font-size:13px;line-height:1.15}   /* marge basse : les lettres à queue (g, p, y) ne sont plus coupées par overflow:hidden */.sec .ev.big .tm{display:none}
+/* picto Important (dans le titre, centré verticalement) ; à droite : cloche (rappel) + heure */
+.ev .t .ico.imp{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.2em;margin-right:4px}.ev .tm{display:inline-flex;align-items:center;gap:3px}.ev .tm .ico{width:13px;height:13px}.ev .tm .ico path{stroke-width:2.6}
+.ev span{padding:var(--evpad)}.ev .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ev .tm{flex:none;font-size:11px;opacity:.9}
+@container (max-width:120px){.ev .tm{display:none}}
+/* "+N de plus" : même gabarit qu'une pastille (compte pour une ligne d'évènement), sans fond */
+.ev.more{background:none;box-shadow:none;color:var(--mut)}.ev.more .t{text-align:center}
+/* ===== 6. MINI-CALENDRIER & VUE ANNÉE ===== */
+#yearg,#bdg{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;align-content:start}   /* les 12 mois (animés), dans le « pane » #v-year (fixe) */
+#mini .mini{overflow:hidden}   /* mini-calendrier : les jours glissent sans sortir du cadre */
+.mini{min-width:0}.mini.yr{border:var(--c-bw) solid var(--c-bc,var(--line));background:color-mix(in srgb,var(--c-bg,var(--pan)) var(--c-bo),transparent);color:var(--c-fg,inherit);border-radius:var(--c-br);box-shadow:var(--c-sh);padding:12px}
+/* Mois en cours (vue Année) : bordure 2 px plus épaisse, couleur "Aujourd'hui" à 60 % ; padding réduit d'autant pour ne pas décaler le contenu */
+#v-year .mini.curm,#v-bday .mini.curm{border:calc(var(--c-bw) + 2px) solid color-mix(in srgb,var(--today) 60%,transparent);padding:10px}
+.lnk{cursor:pointer}   /* nom du mois (vue Année, mini-calendrier) : ouvre la vue Mois */
+/* Liste des évènements tagués « Vue Année » sous les jours du mois */
+.ylist{margin-top:8px}.ylist .ev{margin:calc(var(--dn) + 2px) 0 0}
+.mh,.mnav{font-size:calc(var(--tt)*.55)}.mh{font-weight:600;text-align:center;margin:0 0 10px;color:var(--mnc,var(--tc))}.mnav{display:flex;align-items:center;gap:4px}.mnav span{flex:1;text-align:center}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;gap:0}
+.dw{color:var(--mut);font-size:11px;padding-bottom:2px}
+/* Pastille du jour : taille réglable (--dotsz, % de la case), couleur du 1er évènement (--dot, hors jours fériés) ajustée par « Luminosité des pastilles », opaque */
+/* Pastille = fond ::before (couleur, anneau d'aujourd'hui, survol, agrandissement) ; le chiffre reste fixe */
+.md{position:relative;isolation:isolate;display:grid;place-items:center;width:var(--dotsz);aspect-ratio:1;border-radius:50%}
+.md::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:50%;background:var(--mdbg,transparent);transition:background-color var(--thc) ease,transform var(--td) var(--e-pop)}
+.md.has{--mdb:color-mix(in srgb,var(--dot),var(--dot-lm) var(--dot-lp));--mdbg:var(--mdb)}
+.md.today{font-weight:700}.md.today::before{box-shadow:inset 0 0 0 2.5px color-mix(in srgb,var(--today) 88%,transparent)}   /* anneau seul à 88 % */
+/* Cellule .mc = 2 couches derrière la pastille .md : ::before = vacances (« boudin » : arrondi au début .vs et à la fin .ve), ::after = férié (rond) */
+.mc{position:relative;display:grid;place-items:center;aspect-ratio:1;cursor:pointer}.mc::before,.mc::after{content:'';position:absolute;inset:0;pointer-events:none}.mc .md{position:relative;z-index:1}
+.mc.vac::before{background:color-mix(in srgb,var(--vac) var(--extop),transparent)}
+.mc.vs::before{border-top-left-radius:50%;border-bottom-left-radius:50%}.mc.ve::before{border-top-right-radius:50%;border-bottom-right-radius:50%}
+.mc.hol::after{border-radius:50%;background:color-mix(in srgb,var(--hol) var(--extop),transparent)}
+.mc:is(.cc1,.cc2,.cc3)::after{border-radius:50%;background:color-mix(in srgb,var(--ccx) var(--extop),transparent)}.mc.cc1{--ccx:var(--cc1)}.mc.cc2{--ccx:var(--cc2)}.mc.cc3{--ccx:var(--cc3)}   /* couleur personnalisée : rond à la place du férié */
+/* ===== 7. POP-UPS ===== */
+/* Page de connexion : seule la pop-up est visible (body.login) ; champ (style du titre d'évènement), œil, message rouge, OK : centrés */
+body.login :is(aside,main,.fab,#offb,#veil){display:none!important}
+#dlogin{width:min(440px,92vw)}#lgf{text-align:center}
+.lgend{margin:-6px 0 12px;font-size:13px;color:var(--mut)}.lgerr{min-height:1.4em;margin:8px 0 4px;font-size:13px;color:#e74c3c}.lgerr:empty{min-height:0;margin:0}
+.lguser{position:absolute;width:1px!important;height:1px;opacity:0;pointer-events:none;padding:0;border:0}
+.lgpw{position:relative}#lgp{padding-right:44px;text-align:left}#lgf .lgrow{justify-content:center;margin-top:14px}#lgok{min-width:96px}
+#lgeye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;padding:5px;display:grid;place-items:center;--bb:transparent;--bl:transparent;--bt:var(--mut);border:0;box-shadow:none;background:transparent!important}
+#lgeye .ico{width:22px;height:22px}#lgeye:hover{--bt:var(--fg)}
+/* Paramètres > Connexion : une ligne par appareil (nom, détails, Renommer, ✕ rouge) */
+.devs{display:flex;flex-direction:column;gap:8px}.dev{display:flex;align-items:center;gap:8px;padding:8px 25px;border:var(--f-bw) solid var(--f-bc,var(--line));border-radius:var(--f-br);
+ background:color-mix(in srgb,var(--c-bg,var(--pan)) calc(var(--c-bo)/2),transparent)}.dev.me{background:color-mix(in srgb,var(--c-bg,var(--pan)) var(--c-bo),transparent)}   /* fond des calendriers ; autres appareils : opacité / 2 */
+.dev .dn{flex:1;min-width:0}.dev .dn b{overflow-wrap:anywhere}.dev .dn small{display:block;color:var(--mut);font-size:12px}.dev .me{margin-left:6px;font-size:11px;padding:1px 7px 2px;border-radius:999px;background:var(--acc);color:#fff;vertical-align:1px}
+.dev .ren{display:flex;gap:6px;flex:1;min-width:0}.dev .ren input{flex:1;min-width:0}
+.dev button.dx{width:30px;height:30px;padding:0;display:grid;place-items:center;flex:none}.dev button.dx .ico{width:14px;height:14px}
+dialog{padding:0;border:var(--p-bw) solid var(--p-bc,var(--line));border-radius:var(--p-br);background:color-mix(in srgb,var(--p-bg,var(--bg)) var(--p-bo),transparent);color:var(--p-fg,var(--fg));width:min(460px,92vw);box-shadow:var(--p-sh)}
+dialog::backdrop{background:var(--ovl);backdrop-filter:blur(var(--blur))}
+dialog input:not([type=checkbox]),dialog select,dialog textarea{width:100%;display:block}
+.box{padding:var(--ppad)}dialog label{display:block;margin:calc(var(--dn)*3) 0;font-size:12px;color:var(--mut)}dialog label input[type=checkbox]{display:inline-block;margin-right:6px}
+#dlg label{line-height:2em}#d{resize:none}#f:focus,#ft:focus,#di:focus,#dm:focus,#lgf:focus{outline:none}
+/* Rappel : libellé + liste sur une ligne ; petite note dessous (rappel adapté, avant l'heure par défaut…) */
+/* Rappels : une ligne par rappel (liste + cloche / enveloppe + « + » ou ✕) ; rappels définis ailleurs : lignes grisées en lecture seule */
+#rems{margin:calc(var(--dn)*3) 0}.rrow{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12px;color:var(--mut)}.rlab{flex:none}.rlab.gh{visibility:hidden}   /* « Rappel : » à sa largeur naturelle ; lignes suivantes : même texte invisible (alignement) */
+.rrow select{flex:1;min-width:0;width:auto!important}.rrow button.rb{width:30px;height:30px;padding:0;border-radius:50%;display:grid;place-items:center;flex:none}.rrow button.rb .ico{width:58%;height:58%}.rrow button.rb:disabled{--bb:var(--mute);--bt:var(--mutehd);--bl:var(--mute);opacity:var(--muteop)}   /* grisé = couleurs « muted » */   /* (prioritaire sur le padding des boudins) */
+.rrow.ext{opacity:var(--muteop)}.rrow.ext .rtxt{flex:1;min-width:0;padding:6px 10px;border:var(--f-bw) dashed var(--f-bc,var(--line));border-radius:var(--f-br)}.rrow.ext .ico{width:16px;height:16px;flex:none;margin:0 7px}
+.hint{margin:-2px 0 6px;font-size:12px;color:var(--mut)}
+/* Boudins (statut, tags) : bordure des champs ; inactifs = couleur et opacité muted ; actifs (.on) = couleur principale */
+.fl{margin:calc(var(--dn)*3) 0;font-size:12px;color:var(--mut)}.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+button.pill{--bb:transparent;--bt:var(--mut);--bl:var(--f-bc,var(--line));border-width:var(--f-bw);border-radius:999px;padding:4px 12px;font-size:12px}
+button.pill:not(.on){opacity:var(--muteop)}button.pill.on{--bb:var(--acc);--bt:#fff;--bl:var(--acc)}
+button.pill.on[data-s=TENTATIVE]{--bb:var(--tent-bg);--bt:var(--tent-fg);--bl:var(--tent-bg)}   /* Provisoire : couleur principale assombrie (si claire) ou éclaircie (si foncée) de 50 % */
+button.pill.on[data-s=CANCELLED]{--bb:var(--danger);--bt:var(--dangerfg,var(--b-fg,var(--fg)));--bl:var(--dangerbc,var(--f-bc,var(--line)))}   /* statut Annulé : couleurs des boutons rouges */#tgw{margin-bottom:calc(var(--dn)*3 + 10px)}
+.seg{gap:0}.seg .pill{border-radius:0}.seg .pill+.pill{margin-left:calc(var(--f-bw)*-1)}.seg .pill:first-child{border-radius:999px 0 0 999px}.seg .pill:last-child{border-radius:0 999px 999px 0}
+/* Aperçu : tags (boudins non cliquables) ; annulé = date et heure barrées, muted */
+.tagv{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.tagv span{background:var(--acc);color:#fff;border-radius:999px;padding:2px 10px;font-size:12px}
+.dl.x{text-decoration:line-through;color:var(--mut)}
+.selw{display:flex;align-items:center;gap:8px}.selw i{width:26px;height:26px;border-radius:50%;flex:none}.selw select{flex:1;min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.two label{min-width:0}.two input{min-width:0}
+/* iPad / iPhone (Safari) : les champs date ont une largeur minimale imposée qui les fait déborder -> apparence neutre */
+@supports(-webkit-touch-callout:none){.two input{-webkit-appearance:none;appearance:none;min-height:2.4em}.two input::-webkit-date-and-time-value{text-align:left}}
+#t,#tk-t,#lgp{font:600 calc(var(--tt)*.75) var(--ft,var(--fx,system-ui));padding:10px 12px;color:var(--tcd,var(--tc))}#t,#tk-t{margin-bottom:10px}#lgp:not(:placeholder-shown){font-size:calc(var(--tt)*.45)}
+/* Pop-up tâche : grosse case d'état devant le titre ; champ date affiché si « Échéance » est cochée */
+.tkh{display:flex;align-items:center;gap:12px}.tkh #tk-t{flex:1;min-width:0}#tk-done{width:28px;height:28px;flex:none;margin:0;cursor:pointer}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}#di .row{margin-top:24px}.row button{min-width:110px;padding:8px 14px}#dd .plusbtn{width:44px;height:44px}
+.ttl{display:flex;align-items:center;gap:12px;margin-bottom:10px}.ttl input{width:28px;height:28px;flex:none;margin:0;cursor:pointer}   /* aperçu d'une tâche : grosse case d'état */
+.ttl i{width:20px;height:20px;border-radius:50%;flex:none;cursor:help}.ttl h3{flex:1;min-width:0;margin:0;font-size:calc(var(--tt)*1.1);line-height:1.15;white-space:nowrap;overflow:hidden}
+.dl{font-size:19px;margin:4px 0 0}.dl.t{font-size:15px;margin:2px 0 4px;color:var(--mut)}.meta{margin:8px 0;color:var(--mut)}.meta.d{white-space:pre-wrap;color:var(--fg)}.muted{color:var(--mut);margin:12px 0 0}
+#dd .dtitle{margin:0 0 20px;font-size:calc(var(--tt)*.8);text-align:center}#dd .ev{font-size:15px;padding:5px 10px;margin:6px 0 0;border-radius:var(--bigr)}   /* évènements affichés en grand : radius « Double taille » */
+.plusrow{display:flex;justify-content:flex-end;margin-top:12px}#dd .plusrow{margin-top:15px}.mtext{margin:0 0 6px;font-size:16px;line-height:1.45;white-space:pre-wrap}#dmsg{width:min(420px,92vw)}#dm .mtext{text-align:center}#dm .row{justify-content:center}#dm .row button{min-width:96px}   /* 3 boutons (évènement répété) sur une ligne */
+#bub{width:250px;padding-bottom:10px;overflow:hidden;border-radius:var(--bubr,var(--p-br))}#bub .dh{background:var(--acc);border:0;border-radius:0;padding:6px 10px;font-size:14px;margin-bottom:2px}#bub .plusrow{padding:0 10px}
+.plusbtn{width:34px;height:34px;padding:0;border-radius:50%;display:grid;place-items:center}.plusbtn .ico{width:55%;height:55%}
+/* ===== 8. SURVOL (Paramètres > « Survol des éléments » dans chaque section) =====
+   Couleur au survol = couleur de base de l'élément mélangée à --X-hm (blanc, noir ou couleur principale) à --X-hp.
+   Uniquement sur les appareils avec souris (sur écran tactile, le survol resterait « collé » après un toucher). */
+@media(hover:hover){
+ button:not(:disabled):hover{background:color-mix(in srgb,var(--bb),var(--b-hm) var(--b-hp));color:color-mix(in srgb,var(--bt),var(--b-hm) var(--b-hp));border-color:color-mix(in srgb,var(--bl),var(--b-hm) var(--b-hp))}
+ .sec:hover:not(:has(.ev:hover)){background-color:color-mix(in srgb,var(--sb),var(--c-hm) var(--c-hp))}   /* pas de survol de la section quand la souris est sur un évènement */
+ .mc:hover .md:not(.has)::before{background:color-mix(in srgb,transparent,var(--c-hm) var(--c-hp))}
+ .ev:not(.more):hover{background:color-mix(in srgb,var(--evb),var(--e-hm) var(--e-hp))}
+ .mc:hover .md.has::before{background:color-mix(in srgb,var(--mdb),var(--e-hm) var(--e-hp))}
+ .week .dh:hover{background:color-mix(in srgb,var(--hb),var(--d-hm) var(--d-hp))}
+ .task:not(.ro):hover span{color:color-mix(in srgb,var(--tkc),var(--t-hm) var(--t-hp))}.task:not(.ro):hover input{accent-color:color-mix(in srgb,var(--tka),var(--t-hm) var(--t-hp))}
+ :is(#tgear,#qgear):hover{background:transparent;color:inherit;border-color:transparent;--gs:1.18}
+ :is(input:not([type=checkbox]):not([type=range]),select,textarea):not(:disabled):hover{background:color-mix(in srgb,var(--fb),var(--f-hm) var(--f-hp));border-color:color-mix(in srgb,var(--fl),var(--f-hm) var(--f-hp))}
+ .cal:hover{background:color-mix(in srgb,transparent,var(--g-hm) var(--g-hp))}
+ h4.fold:hover,h4.cat-h:hover{color:color-mix(in srgb,var(--sc),var(--g-hm) var(--g-hp))}
+ .lnk:hover{color:color-mix(in srgb,var(--mnc,var(--tc)),var(--g-hm) var(--g-hp))}
+ .ev.more:hover{color:color-mix(in srgb,var(--mut),var(--g-hm) var(--g-hp))}.ev.more:hover .t{text-decoration:underline}
+}
+/* ===== 8b. ANIMATIONS (Paramètres > Apparence > Animations ; classes posées sur <body> par theme()) =====
+   an = animations actives (case cochée et pas de « réduire les animations » dans le système) · an-side / an-fold / an-pop / an-hov / an-lift / an-fab / an-dot = chaque option
+   ready = posée après le premier affichage (pas d'animation au chargement). Courbes : ouverture ≠ fermeture (la transition est celle de l'état d'arrivée). */
+body.an-hov{--thc:calc(.25s*var(--ak))}body.an-lift{--tl:calc(.35s*var(--ak))}body.an-dot{--td:calc(.35s*var(--ak))}body.an-fab{--tf:calc(.83s*var(--ak))}body.an{--tg:calc(.35s*var(--ak))}
+/* survol : fondu doux des couleurs + translation (boutons, évènements) */
+:is(button,.sec,.ev,.week .dh,.cal,.task span,input,select,textarea,h4.fold,h4.cat-h,.lnk){transition:background-color var(--thc) ease,color var(--thc) ease,border-color var(--thc) ease,transform var(--tl) var(--e-lift)}
+@media(hover:hover){
+ body.an-lift :is(button:not(.pill):not(.swatch):not(.sw):not(#tgear):not(#qgear):not(#qgo):not(#lgeye):not(#burger):not(.spin>button):not(:disabled),.ev:not(.more):not(.ph),#tg .pill,.rrow button.rb.pill:not(:disabled)):hover{transform:translateY(-2px)}   /* tags et pictos des rappels aussi, pas le statut */
+ body.an-dot .mc:hover .md::before{transform:scale(var(--dotk))}   /* pastille : 100 % de la case */
+}
+/* volet latéral : ouverture (rebond léger) / fermeture (élan) */
+body.ready.an-side aside{transition:margin-left calc(.45s*var(--ak)) var(--e-open),transform calc(.45s*var(--ak)) var(--e-open),visibility 0s}
+body.ready.an-side.closed aside{transition:margin-left calc(.3s*var(--ak)) var(--e-close),transform calc(.3s*var(--ak)) var(--e-close),visibility 0s calc(.3s*var(--ak))}
+body.ready.an-side #veil{transition:opacity calc(.3s*var(--ak)) ease}
+/* pop-up et bulles : apparition (opacité et/ou échelle 92 %, rebond ; vitesse --akp, plus lente que les autres animations) ; fermeture plus courte, sans rebond (classe .closing posée en JS) ; fond en fondu seulement */
+/* bouton principal (rotation + / ×) : --tf = 0,83 s × --ak (rapide 0,35 s · modérée 0,54 s · lente 0,83 s) */
+@keyframes pin{from{opacity:var(--po0);transform:scale(var(--ps0))}}@keyframes pout{to{opacity:var(--po0);transform:scale(var(--ps0))}}
+@keyframes bin{from{opacity:0}}@keyframes bout{to{opacity:0}}
+body.an-pop dialog[open]{animation:pin calc(.35s*var(--akp)) var(--e-pop)}body.an-pop dialog[open]::backdrop{animation:bin calc(.3s*var(--ak)) ease}
+body.an-pop dialog.closing{animation:pout calc(.2s*var(--ak)) ease-in forwards}body.an-pop dialog.closing::backdrop{animation:bout calc(.2s*var(--ak)) ease-in forwards}
+body.an-pop :is(#bub,#tpop,#qpop,#cp):not([hidden]){transform-origin:top left;animation:pin calc(.35s*var(--akp)) var(--e-pop)}
+body.an-pop :is(#bub,#tpop,#qpop,#cp).closing{animation:pout calc(.2s*var(--ak)) ease-in forwards}
+/* ===== 9. PARAMÈTRES ===== */
+.set{padding:20px;max-width:600px;margin:auto}.set h3{margin:18px 0 6px;font-size:25px}
+.fr{display:flex;align-items:center;gap:10px;margin:calc(var(--dn)*2.7) 0;flex-wrap:wrap}
+.fr>label{flex:1 1 200px;font-size:13px}.ctl{flex:1 1 200px;display:flex;align-items:center;gap:8px}
+.ctl input[type=text],.ctl input[type=url],.ctl input[type=time],.ctl select{flex:1;min-width:0}
+.ctl input[type=range]{flex:1;padding:0}.val{min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.swatch{width:30px;height:30px;padding:0;border-radius:50%;border:var(--f-bw) solid var(--f-bc,var(--line));flex:none}   /* bordure de la catégorie Champs */.ctl .hx{flex:none;width:96px;font-family:monospace}
+/* Calendriers externes : URL pleine largeur + bouton, ligne d'information dessous */
+.fr.hov{flex-wrap:nowrap}.fr.hov>label{flex:none}.fr.hov .ctl{flex:1;min-width:0}.fr.hov select{flex:none;width:auto;max-width:12em}   /* Survol : une seule ligne */
+.fsp{height:10px}.ctl label.chk{display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:13px}
+/* Répétition (formulaire d'évènement) */
+.rr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:calc(var(--dn)*3) 0;font-size:12px;color:var(--mut)}.rr select{width:auto!important;display:inline-block!important;flex:none}
+.rr input[type=number]{width:64px!important;display:inline-block!important}.rr input[type=date]{width:auto!important;display:inline-block!important}#rint,#rcw{display:inline-flex;align-items:center;gap:6px}
+#rd .pill{min-width:34px;padding:4px 8px}#f .rr[hidden],#f .rr [hidden]{display:none!important}
+.thr>label{flex:none}.thr .ctl{flex:1 1 300px}.thr .ctl select{flex:1 1 140px}.thr .ctl button{flex:none}#dm input.pin{display:block;width:100%;margin:4px 0 2px}#dm select.pin{display:block;width:100%;margin:6px 0 4px}
+.advrow{display:flex;justify-content:flex-end;margin:2px 0 12px}   /* Apparence : bouton « Paramètres avancés / simples » */
+/* Vue Mois : coins hauts extérieurs de chaque semaine = le plus grand de « Radius » (Calendriers) et « Radius des en-têtes » */
+.week>.dh.first,.wsh.h0{border-top-left-radius:max(var(--hr),var(--c-br))}.week>.dh.last,.wsh.h6{border-top-right-radius:max(var(--hr),var(--c-br))}
+select.unav,option.unav{color:var(--mut)}
+.mc.pad{cursor:default;pointer-events:none}
+.ext>label{flex-basis:100%;font-weight:600}   /* intitulés des calendriers externes en gras */
+.xcs{margin:calc(var(--dn)*2.7) 0}.xcs>.xlab{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.xc{padding:8px 0;border-top:1px dashed var(--line)}.xc:first-of-type{border-top:0}.xc .ctl input[type=text]{flex:1 1 120px;min-width:0;max-width:220px}.xc .ctl select{flex:1 1 150px;min-width:0}.xcnew{flex:1;font-size:12px;color:var(--mut)}
+.xc button.swatch{min-width:0!important;width:30px;flex:none}.xc button.xb{flex:none;width:34px;min-width:34px!important;height:34px;padding:0;display:grid;place-items:center}.xc button.xb .ico{width:15px;height:15px}.ext .ctl{flex-basis:100%}.ext .ctl button{flex:none;white-space:nowrap;min-width:170px}
+.extinfo{flex:1 1 100%;font-size:12px;color:var(--mut);margin-top:-4px}.extinfo:empty{display:none}
+/* URL dont la mise à jour automatique a échoué : bordure rouge, plus épaisse */
+.ext input.bad{--fl:var(--dangerbc,#e74c3c);border-width:calc(var(--f-bw) + 1px)}
+.set textarea{width:100%;font-family:monospace}.srow{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+#cp{z-index:9;width:230px;padding:12px}#cp-sv{position:relative;height:140px;border-radius:8px;touch-action:none;cursor:crosshair}
+#cp-dot{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #0007;pointer-events:none}
+#cp-h{width:100%;margin:10px 0;padding:0;appearance:none;height:12px;border:0;border-radius:6px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+#cp-h::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #0007}#cp-h::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #0007}
+#cp-pre{display:flex;flex-wrap:wrap;gap:6px}.sw{width:24px;height:24px;padding:0;border-radius:50%}
+@media(max-width:700px){aside{position:fixed;z-index:5;inset:0 auto 0 0;max-width:85vw;box-shadow:-60px 0 0 var(--asbg),4px 0 16px #0006}body.closed aside{margin-left:0;transform:translateX(-100%)}main{padding:var(--calpadm)}.pane{padding:var(--calpadm);padding-bottom:calc(var(--calpadm) + var(--fabh))}#v-settings{padding:0 0 var(--fabh)}
+ #veil{display:block;position:fixed;inset:0;z-index:4;background:var(--ovl);opacity:0;pointer-events:none}body:not(.closed) #veil{opacity:1;pointer-events:auto}h1{font-size:calc(var(--tt)*1.2)}}
+/* ===== 10. ÉCRAN DE CHARGEMENT =====
+   Opaque, couleur « Fond de l'écran de chargement » (sinon fond de la page), titre (×3, réduit sur écran étroit) de l'agenda qui « respire » ; couleurs, titre et police injectés par le serveur (<style id="pre">)
+   pour être justes dès le premier affichage. Retiré en fondu quand le premier mois est affiché (ou au bout de 10 s ; 15 s en CSS si le script échoue). */
+#loader{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--ldbg,var(--bg));animation:ldsafe 0s 15s forwards}
+#loader b{font:600 clamp(32px,11vw,96px)/1.1 var(--ldf,system-ui,sans-serif);color:var(--ldc,var(--fg));padding:0 16px;max-width:100%;box-sizing:border-box;text-align:center;overflow-wrap:anywhere;animation:ldb 1.6s ease-in-out infinite alternate}
+@keyframes ldb{from{opacity:.35}to{opacity:1}}@keyframes ldsafe{to{visibility:hidden}}   /* sécurité (script en échec) : visibility seulement, pour ne pas gêner le fondu (opacité) */
+@media(prefers-reduced-motion:reduce){#loader b{animation:none}}
+
+button{text-transform:var(--casb,none)}button::first-letter{text-transform:var(--casb1,none)}   /* Casse des boutons */
+/* ===== Fenêtre d'évènement : lignes « libellé + champ », options repliées, flèches des nombres, mode anniversaire ===== */
+.fl1{display:flex;align-items:center;gap:10px;margin:calc(var(--dn)*3) 0;font-size:12px;color:var(--mut)}.fl1>.selw,.fl1>input,.fl1>.pills{flex:1;min-width:0}.fl1>.pills{flex-wrap:wrap}
+dialog label.aday{margin-top:-5px}#rnote{opacity:.5}.row{flex-wrap:wrap}
+.num{position:relative;display:inline-flex;align-items:center}.num input{padding-right:22px!important;-moz-appearance:textfield;appearance:textfield}
+.num input::-webkit-inner-spin-button,.num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num .spin{position:absolute;right:3px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center}
+.num .spin button{--bb:transparent;--bl:transparent;width:16px;height:13px;min-width:0!important;padding:0;border:0;box-shadow:none;background:none!important;color:var(--acc);display:grid;place-items:center;cursor:pointer}
+.num .spin button .ico{width:10px;height:10px}.num .spin button:hover{color:color-mix(in srgb,var(--acc),#000 25%)}
+#f .bonly{display:none}#f.bmode .bonly{display:block}#f.bmode .nb{display:none!important}
+/* pop-up évènement : groupes (Titre + Calendrier · Statut + Tags · Dates + Répétition · Rappels · Lieu + Description) ; petit écart dans un groupe, grand entre deux groupes */
+#f{display:flex;flex-direction:column;gap:24px}#f>*{margin:0}#f>.row{margin-top:8px}#f .grp>#t{margin-bottom:5px}   /* 24 px entre groupes ; un peu plus sous le titre et au-dessus des boutons */
+#f .grp,#f .grp>.opt{display:flex;flex-direction:column;gap:calc(var(--dn)*3)}#f .grp>*,#f .grp>.opt>*,#f .two>label{margin:0}
+#f .grp>.aday{margin-top:-4px}#f:not(.more) .opt{display:none}
+#rems{display:flex;flex-direction:column;gap:calc(var(--dn)*2)}#rems>.rrow{margin:0}
+#cw .selw i{order:2}#f .fl1>.pills{margin-top:0}   /* pastille du calendrier après la liste */
+#f.bmode .two{display:flex;align-items:center;gap:14px;flex-wrap:wrap}#f.bmode .two>label:first-child{display:flex;align-items:center;gap:10px}#f.bmode .two input{width:auto}#f.bmode .two .bonly{margin:0;white-space:nowrap;display:flex;align-items:center}   /* anniversaire : Date, champ et « Année inconnue » sur une ligne */
+/* anniversaires : picto dans les en-têtes (vue Mois) et à côté du nom du mois (vue Année) ; masqué si la place manque */
+.dh{position:relative}.mhw{position:relative}.bdi{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:grid;place-items:center;cursor:pointer;opacity:.9;line-height:0}
+.dh .bdi{right:clamp(0px,calc((100cqw - 66px)/3),5px)}.dh .bdi.bdx{display:none}   /* 5 px du bord dès 100 px de large, réduits jusqu'à 0 quand la case rétrécit ; .bdx = masqué (chevauche le texte, voir fitHeads) */
+.bdi .ico{width:14.4px;height:14.4px}.mhw .bdi .ico{width:19.2px;height:19.2px}.bdi:hover{opacity:1}   /* vue Année : picto hors du nom du mois (pas de survol commun), couleur du texte des calendriers */
+#nav{transition:opacity calc(.25s*var(--ak)) ease,visibility calc(.25s*var(--ak))}#nav.off{opacity:0;visibility:hidden}   /* vue Anniversaires : < Aujourd'hui > masqués en fondu */
+@container (max-width:66px){.bdi{display:none}}
+.bdi svg{margin-bottom:2.5px}.tm .ico{margin-top:1px}   /* hauteur des pictos anniversaire et rappel */
+/* aperçu d'un jour : « Rien de prévu », couleurs personnalisées (pastilles à gauche, + à droite) ; choisie = anneau de 2,5 px à 2 px de la pastille, sinon estompée */
+.dnone{margin:6px 0 0;text-align:center;color:var(--mut);font-size:15px}
+#dd .plusrow{justify-content:space-between;align-items:center}.dcols{display:flex;gap:12px;padding-left:4px}
+button.dcol{position:relative;width:26px;height:26px;padding:0;border-radius:50%;border:0;--bb:var(--dc);--bl:var(--dc);background:var(--dc)!important;box-shadow:none;opacity:.35;transition:opacity var(--thc) ease}
+button.dcol::after{content:'';position:absolute;inset:-4.5px;border-radius:50%;box-shadow:inset 0 0 0 2.5px var(--dc);opacity:0;transition:opacity var(--thc) ease}   /* anneau : ombre intérieure (comme « Aujourd'hui » du mini-calendrier : pas arrondie au pixel), 2 px d'écart */
+button.dcol.on{opacity:1}button.dcol.on::after{opacity:1}@media(hover:hover){button.dcol:not(.on):hover{opacity:.65}}
+.lkrows{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px}.lkrow{display:flex;gap:8px;align-items:center}.lkrow input{min-width:0}.lkrow input[type=text]{flex:1 1 140px}.lkrow input[type=url]{flex:2 1 220px}
+.lkrow input.bad{--fl:var(--dangerbc,#e74c3c);border-width:calc(var(--f-bw) + 1px)}.lkrow button.xb{flex:none;width:34px;min-width:34px;height:34px;padding:0;display:grid;place-items:center}.lkrow button.xb .ico{width:15px;height:15px}.lkrow button.xb[hidden]{display:none}
+#set>.xlab{display:block;font-size:13px;font-weight:600;margin:14px 0 4px}
+/* ===== 13. RECHERCHE (volet) et ANIMATION DES TITRES ===== */
+/* champ sur toute la largeur ; loupe et engrenage posés dedans, à droite ; texte tronqué par « … » avant les boutons */
+#srch{position:relative;margin:10px 0 4px}#srch input{width:100%;box-sizing:border-box;padding:8px 66px 8px 10px;font-size:13px;text-overflow:ellipsis}#srch input::placeholder{text-overflow:ellipsis}
+#srch input::-webkit-search-cancel-button{display:none}   /* pas de croix du navigateur sous les boutons */
+#srch :is(#qgo,#qgear){position:absolute;top:50%;translate:0 -50%;width:26px;min-width:26px;height:26px;padding:0;display:grid;place-items:center;--bb:transparent;--bl:transparent;--bt:currentColor;border:0;box-shadow:none;color:inherit}
+#srch #qgo{right:31px}#srch #qgear{right:5px}#srch :is(#qgo,#qgear) .ico{width:18px;height:18px}
+#srch #qgo:hover{background:transparent;color:inherit;--gs:1.18}#srch #qgo .ico{transition:transform var(--tg) var(--e-pop);transform:scale(calc(1.5*var(--gs,1)))}   /* loupe agrandie ×1,5 (×1,18 de plus au survol) */
+#dsrch{width:min(560px,94vw)}#ds{outline:none}#dsrch:focus,#dsrch:focus-visible{outline:none}#ds .dtitle{margin:0 0 6px;font-size:calc(var(--tt)*.8);text-align:center}.srgo{margin-top:14px}#di .srgo+.row{margin-top:12px}.srn{margin:0 0 12px;text-align:center;color:var(--mut);font-size:14px}
+.srl{max-height:min(62vh,600px);overflow-y:auto;overscroll-behavior:contain;padding:0 16px 2px 2px;margin:0 -16px 0 -2px}   /* barre de défilement à 16 px des résultats */
+.srm{margin:14px 0 4px;font-size:var(--st);color:var(--tcd,var(--tc));font-family:var(--fsb,var(--fx,system-ui,sans-serif))}
+:is(.srm,.srd){text-transform:var(--casc,lowercase)}:is(.srm,.srd)::first-letter{text-transform:var(--casc1,lowercase)}   /* mois et jours : « Casse des calendriers » */.srl>.srm:first-child,.srsep+.srm{margin-top:4px}
+.srsep{margin:16px 0 4px}.srl>.srsep:first-child{margin-top:2px}
+.srr{display:grid;grid-template-columns:72px 1fr;column-gap:8px;align-items:center;margin:5px 0}.srd{font-size:13px;color:var(--mut);white-space:nowrap}
+.srr.bd{grid-template-columns:1fr}.srr.bd .srs{grid-column:1}   /* anniversaire : sans colonne du jour */
+.srr .ev{font-size:15px;padding:5px 10px;margin:0;cursor:pointer;border-radius:var(--bigr)}.srs{grid-column:2;font-size:12px;color:var(--mut);margin:2px 0 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srmore{display:flex;justify-content:center;margin:12px 0 2px}.srmore button[hidden]{display:none}
+#dropbox.flash{animation:flash 1.6s ease-out forwards}@keyframes flash{0%,15%{opacity:0}25%,70%{opacity:1}100%{opacity:0}}
+/* rebond des titres (case « Animation des titres ») : monte de 7 px, redescend 2 px plus bas, remonte 1 px plus haut, puis se pose.
+   Chaque étape part en douceur (sortie légère) et arrive très amortie (cubic-bezier(.3,0,.1,1)) ; ~0,8 s en vitesse « Modérée » */
+body.an-title #title.hop{animation:hop calc(1.25s*var(--ak)) both}
+@keyframes hop{0%,30%,60%,82%{animation-timing-function:cubic-bezier(.3,0,.1,1)}0%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}60%{transform:translateY(2px)}82%{transform:translateY(-1px)}}
+/* barres de défilement : couleur principale (Chrome, Firefox, Edge : scrollbar-color ; Safari : ::-webkit-scrollbar) */
+:root{scrollbar-color:var(--acc) transparent}
+@supports not (scrollbar-color:red){::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--acc);border-radius:10px;border:2px solid transparent;background-clip:padding-box}}
+#bub .bdl{padding:4px 10px;cursor:pointer;border-radius:6px}#bub .bdl:hover{background:color-mix(in srgb,transparent,var(--acc) 15%)}
+/* ===== 11. GLISSER-DÉPOSER (vue Mois) : pastille fantôme qui suit le pointeur, pastille d'origine estompée, jour visé encadré ===== */
+#grid .ev.dd{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* appui long (iPhone) : ni loupe ni menu */
+.ev.dragsrc{opacity:.3!important}.ev.ghost{position:fixed;z-index:30;left:0;top:0;margin:0!important;pointer-events:none;opacity:.92;box-shadow:0 6px 18px var(--shd);transform-origin:0 0}
+/* pastille attrapée : ×1,4 (propriété scale, à part de la translation qui suit le pointeur) ; grossit avec l'animation des pop-up, reprend sa taille au dépôt */
+.ev.ghost.big{scale:1.4}.ev.ghost{transition:none}body.an-pop .ev.ghost{transition:scale calc(.2s*var(--ak)) ease-out}body.an-pop .ev.ghost.big{transition:scale calc(.35s*var(--akp)) var(--e-pop)}
+body.dragging,body.dragging *{cursor:grabbing!important;-webkit-user-select:none;user-select:none}
+#grid{position:relative}#grid .sec.drop{background-color:color-mix(in srgb,var(--sb),var(--acc) 18%)}
+/* contour du jour visé : un seul cadre autour de l'en-tête et des 3 sections (pas sur les pointillés), coins repris des cases (posé par dropBox()) */
+#dropbox{position:absolute;z-index:5;pointer-events:none;border:2px solid var(--acc);box-sizing:border-box}
+/* Corbeille : apparaît pendant un glisser-déposer, à gauche du bouton principal (75 % de sa taille, bas aligné) ; y lâcher un évènement = demande de suppression */
+#trash{position:fixed;bottom:24px;right:calc(24px + 56px*var(--fabk) + 14px);z-index:3;width:calc(42px*var(--fabk));height:calc(42px*var(--fabk));padding:0;border-radius:50%;
+ display:grid;place-items:center;box-shadow:0 calc(var(--shs)/3) var(--shs) var(--shd)}
+#trash .ico{width:46%;height:46%}
+/* cible survolée pendant un glisser-déposer : corbeille (supprimer) ou bouton + (dupliquer) grossit (propriété scale : n'entre pas en conflit avec le soulèvement au survol) */
+#trash,#new{transition:background-color var(--thc) ease,color var(--thc) ease,border-color var(--thc) ease,transform var(--tl) var(--e-lift),scale calc(.18s*var(--ak)) var(--e-pop)}#trash.hot,#new.hot{scale:1.18}
+@keyframes tin{from{opacity:0;transform:scale(.7)}}@keyframes tout{to{opacity:0;transform:scale(.7)}}
+body.an-pop :is(#trash,#new).in{animation:tin calc(.35s*var(--akp)) var(--e-pop)}body.an-pop #trash.closing{animation:tout calc(.2s*var(--ak)) ease-in forwards}
+/* ===== 12. MESSAGE BREF (toast) et RACCOURCIS UTILES (touche ?) ===== */
+/* message bref : centré sur la zone principale (left posé par toast()), deux fois plus haut que le bouton principal, aux couleurs des boutons (erreur : boutons rouges) */
+#toast{position:fixed;left:50%;bottom:calc(2*(36px + 56px*var(--fabk)));z-index:40;transform:translateX(-50%);width:max-content;max-width:min(620px,calc(100vw - 32px));padding:13px 21px;
+ border-radius:var(--b-br);background:color-mix(in srgb,var(--b-bg,var(--bg)) var(--b-bo),transparent);color:var(--b-fg,var(--fg));border:var(--b-bw) solid var(--b-bc,var(--line));
+ box-shadow:0 4px 16px var(--shd);font-size:17px;line-height:1.35;text-align:center;transition:opacity .35s ease}
+#toast.err{background:var(--danger);color:var(--dangerfg,var(--b-fg,var(--fg)));border-color:var(--dangerbc,var(--b-bc,var(--line)))}
+#toast.out{opacity:0}
+#dkeys{width:min(620px,94vw)}#dk h3{margin:0 0 18px;text-align:center;font-size:calc(var(--tt)*.8)}#dk h4{margin:18px 0 8px;font-size:var(--st);color:var(--sc);font-family:var(--fsb,var(--fx,system-ui,sans-serif));text-transform:var(--cass,uppercase)}
+.keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 22px}.kr{display:flex;align-items:center;gap:12px;min-width:0}.kr>span{min-width:0;font-size:14px}
+.kr .kks{display:flex;gap:4px;flex:none;min-width:96px}   /* textes alignés (deux touches ← → = 96 px) */
+kbd.kk{display:inline-grid;place-items:center;min-width:46px;height:46px;padding:0 8px;box-sizing:border-box;font:600 calc(var(--tt)*.75)/1 var(--ft,var(--fx,system-ui,sans-serif));color:var(--tc);
+ border:var(--f-bw) solid var(--f-bc,var(--line));border-radius:9px;background:var(--pan);box-shadow:0 2px 0 var(--line)}
+kbd.kk.w{font-size:calc(var(--tt)*.45)}   /* touches à nom long (Entrée, Échap…) */
+/* Paramètres > Connexions : derniers échecs de connexion */
+.lkh{margin:20px 0 4px;font-size:13px;font-weight:600}.lkl{margin:6px 0 0;padding:0;list-style:none;font-size:12px;color:var(--mut)}.lkl li{padding:2px 0}.lkl b{color:var(--fg);font-weight:600}
+</style><style id="ff"></style><style id="cc"></style><!--PRE--></head><body><div id="loader" aria-busy="true"><b id="ldt"></b></div>
+<!-- Menu latéral -->
+<aside id="side">
+ <!-- Languette : accrochée au bord droit du volet (elle suit ses animations), visible aussi volet fermé -->
+ <button id="burger" title="{{side.toggle}}" aria-label="{{side.toggleAria}}" data-ico="dchev"></button>
+ <div class="sh"><b id="sidetitle"></b></div>   <!-- titre fixe : hors de la zone qui défile -->
+ <div class="side-in">
+ <div id="mini"></div>
+ <!-- Recherche : champ, loupe (lancer), engrenage (options) -->
+ <div id="srch"><input id="q" type="search" placeholder="{{search.ph}}" aria-label="{{search.ph}}" maxlength="100" enterkeyhint="search"><button id="qgo" class="sm" title="{{search.go}}" aria-label="{{search.go}}" data-ico="search"></button><button id="qgear" title="{{search.opts}}" aria-label="{{search.opts}}" data-ico="gear"></button></div>
+ <div class="cat"><h4 class="fold" data-sec="cal"><span>{{side.cals}}</span><i data-ico="d"></i></h4><div id="cals" class="cat-b"></div></div>
+ <div class="cat"><h4 class="fold" data-sec="tasks"><span>{{side.tasks}}</span><button id="tgear" title="{{side.taskOpts}}" data-ico="gear"></button><i data-ico="d"></i></h4><div id="tasks" class="cat-b"></div></div>
+ <div class="cat" id="toolsc" hidden><h4 class="fold" data-sec="tools"><span>{{side.tools}}</span><i data-ico="d"></i></h4><div id="tools" class="cat-b"></div></div>
+</div>
+</aside>
+<div id="veil"></div>
+<div id="qpop" hidden>
+ <b>{{search.in}}</b>
+ <label><input type="checkbox" id="q-t"> {{search.inT}}</label>
+ <label><input type="checkbox" id="q-l"> {{search.inL}}</label>
+ <label><input type="checkbox" id="q-d"> {{search.inD}}</label>
+ <label><input type="checkbox" id="q-k"> {{search.inK}}</label>
+ <b>{{search.when}}</b>
+ <label><input type="checkbox" id="q-f"> {{search.whenF}}</label>
+ <label><input type="checkbox" id="q-p"> {{search.whenP}}</label>
+</div>
+<div id="tpop" hidden>
+ <label><input type="checkbox" id="p-done"> {{tasks.showDone}}</label>
+ <label><input type="checkbox" id="p-ro"> {{tasks.showRo}}</label>
+ <label><input type="checkbox" id="p-dated"> {{tasks.dated}}</label>
+ <label><input type="checkbox" id="p-bylist"> {{tasks.byList}}</label>
+</div>
+<!-- Zone principale -->
+<main>
+ <!-- En-tête : 2 lignes sur écran étroit, 1 ligne sur écran large (voir CSS section 4) -->
+ <header>
+  <div class="left">
+   <div class="nav" id="nav"><button id="prev" class="rnd" data-ico="l"></button><button id="today">{{btn.today}}</button><button id="next" class="rnd" data-ico="r"></button></div>
+  </div>
+  <h1 id="title"></h1>
+  <div class="tabs" id="tabs"><button class="tab" data-v="month">{{view.month}}</button><button class="tab" data-v="year">{{view.year}}</button><button class="tab" data-v="bday" data-ico="cake" title="{{view.bday}}" aria-label="{{view.bday}}" hidden></button><button class="tab" data-v="settings" title="{{view.settings}}" aria-label="{{view.settings}}" data-ico="gear"></button></div>
+ </header>
+ <div id="banner" hidden>{{banner.err}}</div>
+ <div id="v-month" class="pane"><div id="grid"></div></div>
+ <div id="v-year" class="pane" hidden><div id="yearg"></div></div>
+ <div id="v-bday" class="pane" hidden><div id="bdg"></div></div>
+ <div id="v-settings" class="pane" hidden><div class="set" id="set"></div></div>
+</main>
+<button id="offb" hidden title="{{offline.btnTitle}}"><b>{{offline.title}}</b><small id="offd"></small></button>
+<button id="new" class="pri fab" title="{{fab.new}}" data-ico="plus"></button>
+<button id="trash" class="danger" title="{{drag.trash}}" aria-label="{{drag.trashAria}}" data-ico="trash" tabindex="-1" hidden></button>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<div id="bub" hidden></div>
+<!-- Sélecteur de couleur maison -->
+<div id="cp" hidden><div id="cp-sv"><i id="cp-dot"></i></div><input type="range" id="cp-h" min="0" max="360"><div id="cp-pre"></div></div>
+<!-- Pop-up : liste des évènements d'un jour -->
+<dialog id="dday"><div class="box" id="dd"></div></dialog>
+<!-- Pop-up : résultats de la recherche -->
+<dialog id="dsrch"><div class="box" id="ds" tabindex="-1" autofocus></div></dialog>
+<!-- Pop-up : aperçu d'un évènement ou d'une tâche -->
+<dialog id="dinfo"><div class="box" id="di" tabindex="-1" autofocus></div></dialog>
+<!-- Pop-up : messages et confirmations (remplace les alertes du navigateur) -->
+<!-- Connexion : mot de passe seul (le nom « calendrier », invisible, aide les trousseaux à enregistrer le mot de passe) -->
+<dialog id="dlogin"><form class="box" id="lgf" tabindex="-1" autofocus>
+ <p id="lgend" class="lgend" hidden>{{login.ended}}</p>
+ <input class="lguser" type="text" name="username" autocomplete="username" value="calendrier" tabindex="-1" aria-hidden="true">
+ <div class="lgpw"><input id="lgp" type="password" name="password" autocomplete="current-password" placeholder="{{login.ph}}" aria-label="{{login.aria}}"><button type="button" id="lgeye" title="{{login.show}}" aria-pressed="false"></button></div>
+ <p id="lgerr" class="lgerr" role="alert"></p>
+ <div class="row lgrow"><button class="pri" id="lgok">{{btn.ok}}</button></div>
+</form></dialog>
+<dialog id="dmsg"><div class="box" id="dm" tabindex="-1" autofocus></div></dialog>
+<!-- Pop-up : raccourcis clavier (touche ?) -->
+<dialog id="dkeys"><div class="box" id="dk" tabindex="-1" autofocus></div></dialog>
+<!-- Pop-up : créer / modifier un évènement -->
+<!-- Évènement : champs de base (titre, calendrier, dates, rappels, lieu) ; « + d'options » : statut, tags, répétition, description.
+     Mode anniversaire (form.bmode) : seulement le nom, la date, « Année inconnue » et les rappels (.nb = masqué dans ce mode) -->
+<dialog id="dlg"><form id="f" class="box" tabindex="-1" autofocus>
+ <!-- groupes séparés par un espace plus grand ; .opt = masqué tant que « + d'options » n'est pas déplié (création) -->
+ <div class="grp"><input id="t" required placeholder="{{ev.titlePh}}">
+  <div class="fl1 nb" id="cw">{{ev.cal}}<div class="selw"><i id="cdot"></i><select id="c"></select></div></div></div>
+ <div class="grp nb opt"><div class="fl1">{{ev.status}}<div class="pills seg" id="st"><button type="button" class="pill" data-s="CONFIRMED">{{ev.st.CONFIRMED}}</button><button type="button" class="pill" data-s="TENTATIVE">{{ev.st.TENTATIVE}}</button><button type="button" class="pill" data-s="CANCELLED">{{ev.st.CANCELLED}}</button></div></div>
+  <div class="fl1" id="tgw">{{ev.tags}}<div class="pills" id="tg"></div></div></div>
+ <div class="grp"><div class="two"><label><span id="slab">{{ev.start}}</span><input id="s" type="datetime-local" required></label><label class="nb">{{ev.end}}<input id="e" type="datetime-local" required></label><label class="bonly aday"><input type="checkbox" id="by"> {{bday.noYear}}</label></div>
+  <label class="nb aday"><input type="checkbox" id="a"> {{date.allDay}}</label>
+  <!-- Répétition : fréquence ; jours (semaines) ; « tous les N … » + fin -->
+  <div class="opt nb"><div class="rr">{{ev.repeat}}<select id="rf"><option value="">{{rr.opt.none}}</option><option value="DAILY">{{rr.opt.DAILY}}</option><option value="WEEKLY">{{rr.opt.WEEKLY}}</option><option value="MONTHLY">{{rr.opt.MONTHLY}}</option><option value="YEARLY">{{rr.opt.YEARLY}}</option><option value="custom" hidden>{{rr.opt.custom}}</option></select></div>
+  <div class="rr" id="rdw"><div class="pills" id="rd"></div></div>
+  <div class="rr" id="rew"><span id="rint">{{rr.every}} <span class="num"><input id="ri" type="number" min="1" max="99" value="1"><span class="spin"><button type="button" data-n="1" title="{{num.plus}}" aria-label="{{num.plus}}"></button><button type="button" data-n="-1" title="{{num.minus}}" aria-label="{{num.minus}}"></button></span></span> <span id="riu">{{rr.unit.DAILY.n}}</span></span><select id="re"><option value="">{{rr.end.never}}</option><option value="until">{{rr.end.until}}</option><option value="count">{{rr.end.count}}</option></select><input id="ru" type="date"><span id="rcw"><span class="num"><input id="rc" type="number" min="1" max="999" value="10"><span class="spin"><button type="button" data-n="1" title="{{num.plus}}" aria-label="{{num.plus}}"></button><button type="button" data-n="-1" title="{{num.minus}}" aria-label="{{num.minus}}"></button></span></span> {{rr.times}}</span></div>
+  <p id="rnote" class="hint" hidden></p></div></div>
+ <div class="grp"><div id="rems"></div><p id="remhint" class="hint" hidden></p></div>
+ <div class="grp nb"><div class="fl1 nb" id="lw">{{ev.loc}}<input id="l"></div>
+  <div class="opt"><label>{{ev.desc}}<textarea id="d" rows="3"></textarea></label></div></div>
+ <p id="note" class="muted" hidden>{{ev.roNote}}</p>
+ <div class="row"><button type="button" id="cancel">{{btn.cancel}}</button><button type="button" id="del" class="danger">{{btn.del}}</button><button type="button" id="moreb" class="nb">{{ev.more}}</button><button class="pri" id="ok">{{btn.save}}</button></div>
+</form></dialog>
+<!-- Pop-up : créer / modifier une tâche -->
+<dialog id="dtk"><form id="ft" class="box" tabindex="-1" autofocus>
+ <div class="tkh"><input type="checkbox" id="tk-done" title="{{task.done}}"><input id="tk-t" required placeholder="{{task.new}}"></div>
+ <label>{{task.list}}<div class="selw"><i id="tk-dot"></i><select id="tk-c"></select></div></label>
+ <label><input type="checkbox" id="tk-hd"> {{task.due}}</label>
+ <label id="tk-dw" hidden>{{task.dueDate}}<input id="tk-due" type="date"></label>
+ <div class="row"><button type="button" id="tk-cancel">{{btn.cancel}}</button><button type="button" id="tk-del" class="danger">{{btn.del}}</button><button class="pri" id="tk-ok">{{btn.addNew}}</button></div>
+</form></dialog>
+<!--TEXTS--><script src="/app.js"></script></body></html>
