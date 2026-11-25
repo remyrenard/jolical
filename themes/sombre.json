@@ -5,9 +5,11 @@
   "EN": "Dark"
  },
  "s": {
+  "bmFg": "#e3e7ee",
+  "bmBg": "#2a3140",
   "evFg": "#ffffff",
   "holEv": "#e86a6a",
-  "accent": "#6b9bff",
+  "accent": "#5370ff",
   "bg": "#15181d",
   "sideBg": "#1c2027",
   "ldBg": "#15181d",
@@ -18,13 +20,14 @@
   "colTitle": "#eef1f6",
   "colSub": "#c9d1dd",
   "colText": "#e3e7ee",
-  "monthCol": "#9dbbff",
+  "monthCol": "#9dadff",
   "todoCol": "#e3e7ee",
   "doneCol": "#5cc28e",
   "dangerBg": "#5a2626",
   "dangerFg": "#ff8a7a",
   "dangerBc": "#c0392b",
-  "todayBg": "#e8505b",
+  "todayBg": "#5b93ff",
+  "todayFg": "#ffffff",
   "vacBg": "#5c5226",
   "holBg": "#5e2f35",
   "popBg": "#000000",
@@ -38,7 +41,7 @@
   "animTitle": true,
   "casTitle": "first",
   "casSub": "first",
-  "casCal": "first",
+  "casCal": "lower",
   "casBtn": "first",
   "animSpeed": "normal",
   "animSwipeAll": true,
@@ -107,8 +110,8 @@
   "evRadius": 16,
   "evPad": 4,
   "popPad": 35,
-  "sizeTitle": 36,
-  "sizeSub": 19,
+  "sizeTitle": 33,
+  "sizeSub": 18,
   "sizeHead": 14,
   "muteOp": 45,
   "recOp": 50,
@@ -145,9 +148,6 @@
    "#8fd3e8",
    "#b5a8ff",
    "#f0a8e8"
-  ],
-  "todayFg": "#ffffff",
-  "bmFg": "#e3e7ee",
-  "bmBg": "#2a3140"
+  ]
  }
 }
