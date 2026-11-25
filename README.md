@@ -1,3 +1,5 @@
+🇫🇷 Français · [🇬🇧 English](README.en.md)
+
 # Jolical 🗓️✨
 
 **Un client web pour Nextcloud Agenda, simple, rapide et entièrement personnalisable.**
@@ -8,13 +10,11 @@ Jolical affiche vos calendriers et vos tâches Nextcloud (CalDAV) dans une inter
 > **Ce projet est fourni tel quel, il est maintenu sur mon temps libre.**  
 > Les signalements de bugs et les propositions sont les bienvenus, sans garantie de délai de réponse.
 
-::: warn
-**Ce projet a été codé par Claude**  
-Le code, les notes et la documentation ont été générés par **Claude** (Anthropic), un assistant d'intelligence artificielle, à partir des idées, des choix et des nombreux tests de son auteur.
+> [!WARNING]
+> **Ce projet a été codé par Claude**  
+> Le code, les notes et la documentation ont été générés par **Claude** (Anthropic), un assistant d'intelligence artificielle, à partir des idées, des choix et des nombreux tests de son auteur.
 
-:::
-
-![Vue "Mois"](.attachments.21101/Screenshot.jpg)
+![Vue "Mois"](docs/images/Screenshot.jpg)
 
 ## Fonctionnalités
 

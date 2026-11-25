@@ -1,3 +1,5 @@
+🇫🇷 Français · [🇬🇧 English](en/INSTALLATION.md)
+
 # Installation et administration
 
 Toutes les commandes se lancent sur le serveur, depuis le dossier du projet (celui qui contient `docker-compose.yml`).
